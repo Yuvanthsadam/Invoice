@@ -4,6 +4,11 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.contrib.auth.base_user import BaseUserManager
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import FileExtensionValidator
+
+
+def upload_directory_path(instance, filename):
+    return 'UPLOADS/{0}/{1}'.format(instance.profile_image, filename)
 
 
 class CustomUserManager(BaseUserManager):
@@ -65,9 +70,10 @@ class Admin(models.Model):
     phone_number = models.CharField(
         validators=[phone_regex], max_length=15, null=False, unique=True)
     gender = models.CharField(choices=gender_choices, max_length=2)
-    email = models.EmailField(max_length=155,default=True)
-    password = models.CharField(max_length=155,default=True)
-    # access_token = models.CharField(max_length=255,default=True) 
+    email = models.EmailField(max_length=155, default=True)
+    password = models.CharField(max_length=155, default=True)
+    profile_image = models.ImageField(upload_to=upload_directory_path, blank=True, null=True, max_length=255, validators=[
+                                      FileExtensionValidator(allowed_extensions=['pdf', 'jpg'])])
 
     def __str__(self):
         return self.first_name
@@ -82,25 +88,27 @@ class Main(models.Model):
 
     def __str__(self):
         return self.main_title
-    
+
 
 class Sub_Title_One(models.Model):
-    main = models.ForeignKey(Main, on_delete=models.CASCADE, related_name='sub_title_one')
+    main = models.ForeignKey(
+        Main, on_delete=models.CASCADE, related_name='sub_title_one')
     sub_title_one = models.CharField(max_length=255, blank=True)
     quantity = models.PositiveIntegerField()
     price = models.FloatField()
-    description=models.CharField(max_length=255, blank=True)
+    description = models.CharField(max_length=255, blank=True)
 
-    
     def __str__(self):
         return str(self.sub_title_one)
-    
+
+
 class Sub_Title_Two(models.Model):
-    sub_title_one = models.ForeignKey(Sub_Title_One, on_delete=models.CASCADE, related_name='sub_title_two')
+    sub_title_one = models.ForeignKey(
+        Sub_Title_One, on_delete=models.CASCADE, related_name='sub_title_two')
     sub_title_two = models.CharField(max_length=255, blank=True)
     quantity = models.PositiveIntegerField()
     price = models.FloatField()
-    description=models.CharField(max_length=255, blank=True)
-    
+    description = models.CharField(max_length=255, blank=True)
+
     def __str__(self):
         return str(self.sub_title_two)

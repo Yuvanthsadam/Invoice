@@ -24,6 +24,11 @@ class AdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = Admin
         fields = '__all__'
+        extra_kwargs = {
+            "profile_image": {
+                "required": False,
+            }
+        }
         # fields = ('user','id', 'first_name', 'last_name','phone_number','gender','email','password')
 
 class Sub_Title_Two_Serializer(serializers.ModelSerializer):
@@ -56,12 +61,12 @@ class AdminRegistrationSerializer(serializers.ModelSerializer):
         fields = '__all__'
     
     # validating Email
-    # def validate_email(self, email):
-    #     user = User.objects.filter(email=(email)).exists()
+    def validate_email(self, email):
+        user = User.objects.filter(email=(email)).exists()
 
-    #     if user:
-    #         raise serializers.ValidationError("Email Already registered")
-    #     return email
+        if user:
+            raise serializers.ValidationError("Email Already registered")
+        return email
 
     # validating password
     def validate_password(self, password):
