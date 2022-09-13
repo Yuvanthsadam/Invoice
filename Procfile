@@ -1,1 +1,1 @@
-web: gunicorn <invoice>.wsgi --log-file -
+web: gunicorn invoice.wsgi --log-file -
