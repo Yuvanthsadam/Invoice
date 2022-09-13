@@ -4,21 +4,14 @@ from billing.serializers import *
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework import generics, status
 from rest_framework.response import Response
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from .serializers import ChangePasswordSerializer
 from dj_rest_auth.views import LoginView
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
-from django.core.exceptions import ValidationError
-from django.contrib.auth import login, authenticate, logout
-from django.core import serializers
-import json
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from knox.models import AuthToken
+from django.contrib.auth import logout
 
-import string
-import random  # define the random module
-
+User = get_user_model()
 
 class AdminRegisterView(generics.GenericAPIView):
     permission_classes = [IsAdminUser, IsAuthenticated]
@@ -202,7 +195,7 @@ class MainDetailView(APIView):
         print("------main_serializer-------"+str(main_serializer))
         resp4 = {
             "code": 1,
-            "message": " Product Detail",
+            "message": "Product Detail",
             "result": main_serializer.data
         }
         return Response(data=resp4, status=status.HTTP_200_OK)
