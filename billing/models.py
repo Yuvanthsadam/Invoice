@@ -8,7 +8,7 @@ from django.core.validators import FileExtensionValidator
 
 
 def upload_directory_path(instance, filename):
-    return 'UPLOADS/{0}/{1}'.format(instance.profile_image, filename)
+    return 'UPLOADS/{0}/{1}'.format(instance.first_name, filename)
 
 
 class CustomUserManager(BaseUserManager):
