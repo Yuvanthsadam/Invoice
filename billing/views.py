@@ -119,7 +119,7 @@ class AdminDetailView(APIView):
 
     def put(self, request, pk):
         admin = Admin.objects.get(pk=pk)
-        admin_serializer = AdminRegistrationSerializer(
+        admin_serializer = AdminSerializer(
             admin, data=request.data)
         if admin_serializer.is_valid():
             admin_serializer.save()
