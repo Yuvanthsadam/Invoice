@@ -440,7 +440,7 @@ def generatePDF(request, id):
     c.line(375, -371, 375, 80)  # vertical lines
     c.line(430, -371, 430, 80)  # vertical lines
 
-    # Declaration and Signature
+    # Declaration and Signature ...
     c.line(-32, -370, 508, -370)
     c.line(250, -370, 250, -420)
     c.drawString(-25, -385, "We declare that above mentioned")
