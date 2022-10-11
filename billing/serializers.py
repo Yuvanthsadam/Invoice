@@ -92,9 +92,43 @@ class LoginSerializer(serializers.Serializer):
         raise serializers.ValidationError('Incorrect Credentials Passed.')
     
 
-
 class ChangePasswordSerializer(serializers.Serializer):
     model = User
 
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
+    
+class ProductSerializer(serializers.ModelSerializer):
+    main = MainSerializer(read_only=True, many=True)
+    
+    class Meta:
+        model = Product
+        fields = '__all__' 
+
+class DraftedSerializer(serializers.ModelSerializer):
+    main = MainSerializer(read_only=True, many=True)
+    
+    class Meta:
+        model = Drafted
+        fields = ['id', 'drafted_product', 'main']
+        
+class PendingSerializer(serializers.ModelSerializer):
+    main = MainSerializer(read_only=True, many=True)
+    
+    class Meta:
+        model = Pending
+        fields = '__all__' 
+        
+
+class CompletedSerializer(serializers.ModelSerializer):
+    main = MainSerializer(read_only=True, many=True)
+    
+    class Meta:
+        model = Completed
+        fields = '__all__' 
+        
+class StoringPDFSerializer(serializers.ModelSerializer):    
+    class Meta:
+        model = StoringPDF
+        fields = ('id','storing_pdf')
+        # fields = '__all__'

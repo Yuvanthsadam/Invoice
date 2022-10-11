@@ -1,3 +1,7 @@
+from tkinter import filedialog
+from tkinter import *
+import tkinter as tk
+import os
 from django.shortcuts import render
 from billing.models import *
 from billing.serializers import *
@@ -10,8 +14,20 @@ from dj_rest_auth.views import LoginView
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth import logout
+import io
+from InvoiceGenerator.api import Invoice, Item, Client, Provider, Creator
+from InvoiceGenerator.pdf import SimpleInvoice
+from django.http import FileResponse
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import inch
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+pdfmetrics.registerFont(TTFont("Arial", "arial.ttf"))
+
 
 User = get_user_model()
+
 
 class AdminRegisterView(generics.GenericAPIView):
     permission_classes = [IsAdminUser, IsAuthenticated]
@@ -48,59 +64,6 @@ class AdminRegisterView(generics.GenericAPIView):
             }
             return Response(res1, status=status.HTTP_400_BAD_REQUEST)
 
-    # def post(self, request, *args, **kwargs):
-    #     # serializer = self.get_serializer(data=request.data)
-    #     data = request.data
-    #     data1 = data.copy()
-    #     S = 24  # number of characters in the string.
-    #     # call random.choices() string module to find the string in Uppercase + numeric data.
-    #     ran = ''.join(random.choices(
-    #         string.ascii_uppercase + string.digits, k=S))
-    #     # data1['access_token'] = ran
-    #     print("------data-------", str(data1))
-    #     admin = Admin()
-    #     admin.first_name = request.POST.get('FirstName')
-    #     admin.last_name = request.POST.get('LastName')
-    #     admin.mobile = request.POST.get('mobile')
-    #     admin.email = request.POST.get('email')
-    #     admin.password = request.POST.get('password')
-    #     admin.gender = request.POST.get('gender')
-    #     admin.access_token = ran
-    #     admin.save()
-    # # if data1.is_valid():
-    # #     a = data1.save()
-    # #     print("------a-------", str(a))
-    #     return Response(admin, status=status.HTTP_201_CREATED)
-    # # if serializer.is_valid():
-    # #     a = serializer.save()
-    # #     print("------a-------"+str(a))
-    # #     data = request.data
-    # #     print("------data-------"+str(data))
-
-    # #     user = authenticate(
-    # #         username=data['email'], password=data['password'])
-    # #     print("------user-------"+str(user))
-
-    # #     jwt_tokens = RefreshToken.for_user(user)
-
-    # #     res = {
-    # #         'code': 1,
-    # #         'message': "Registered Successfully",
-    # #         "status":True,
-    # #         'refresh_token': str(jwt_tokens),
-    # #         'access_token': str(jwt_tokens.access_token),
-    # #         "result": serializer.data
-    # #     }
-
-    # #     return Response(res, status=status.HTTP_201_CREATED)
-    # # else:
-    # #     res1 = {
-    # #         'code': 0,
-    # #         'message': "Not Registered",
-    # #         "result": serializer.errors
-    # #     }
-    # #     return Response(res1, status=status.HTTP_400_BAD_REQUEST)
-
 
 class AdminDetailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -133,8 +96,8 @@ class AdminDetailView(APIView):
             return Response(admin_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        user = User.objects.get(pk=pk)
-        user.delete()
+        admin = Admin.objects.get(pk=pk)
+        admin.delete()
         resp6 = {
             "code": 1,
             "message": "Deleted Successfully",
@@ -188,9 +151,6 @@ class MainDetailView(APIView):
     def get(self, request, pk, *args, **kwargs):
         main = Main.objects.filter(admin_id=pk)
         print("------Main-------"+str(main))
-        # tmpJson = serializers.serialize("json",main)
-        # print("------tmpJson-------"+str(tmpJson))
-        # tmpObj = json.loads(tmpJson)
         main_serializer = MainSerializer(main, many=True)
         print("------main_serializer-------"+str(main_serializer))
         resp4 = {
@@ -230,8 +190,6 @@ class Sub_Title_One_View(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # user = request.user
-        # if user.is_admin:
         sub_title_one = Sub_Title_One.objects.all()
         print("sub_title_one---------"+str(sub_title_one))
         sub_title_one_serializer = Sub_Title_One_Serializer(
@@ -246,8 +204,6 @@ class Sub_Title_One_View(generics.GenericAPIView):
         return Response(data=resp1, status=status.HTTP_200_OK)
 
     def post(self, request):
-        # user = request.user
-        # if user.is_admin:
         sub_title_one_serializer = Sub_Title_One_Serializer(data=request.data)
         print("sub_title_one_serializer---------" +
               str(sub_title_one_serializer))
@@ -370,20 +326,6 @@ class Sub_Title_Two_DetailView(APIView):
         }
         return Response(data=resp5, status=status.HTTP_200_OK)
 
-# class MainGetView(generics.GenericAPIView):
-
-#     def get(self, request, *args, **kwargs):
-#         main = Main.objects.all()
-#         print("------main-------"+str(main))
-#         main_serializer = MainSerializer(main, many=True)
-#         print("------main_serializer-------"+str(main_serializer))
-#         res2 = {
-#             'code': 1,
-#             'message': "GET List",
-#             "result": main_serializer.data
-#         }
-#         return Response(data=res2, status=status.HTTP_200_OK)
-
 
 class CustomLoginView(LoginView):
     def get_response(self):
@@ -394,23 +336,6 @@ class CustomLoginView(LoginView):
             'result': orginal_response.data
         }
         return Response(body)
-
-
-# class SignInAPI(generics.GenericAPIView):
-#     serializer_class = LoginSerializer
-#     permission_classes = [AllowAny]
-
-#     def post(self, request):
-#         serializer = self.get_serializer(data=request.data)
-#         print("------serializer-------"+str(serializer))
-#         serializer.is_valid(raise_exception=True)
-#         print("------serializer-------"+str(serializer))
-#         user = serializer.validated_data
-#         print("------user-------"+str(user))
-#         return Response({
-#             "user": UserSerializer(user, context=self.get_serializer_context()).data,
-#             "token": AuthToken.objects.create(user)
-#         })
 
 
 @api_view(["POST"])
@@ -441,10 +366,8 @@ class ChangePasswordView(generics.UpdateAPIView):
         serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
-            # Check old password
             if not self.object.check_password(serializer.data.get("old_password")):
                 return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
-            # set_password also hashes the password that the user will get
             self.object.set_password(serializer.data.get("new_password"))
             self.object.save()
             response = {
@@ -453,3 +376,178 @@ class ChangePasswordView(generics.UpdateAPIView):
             }
             return Response(response)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+def generatePDF(request, id):
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer)
+
+    # Inserting Logo into the Canvas at required position
+    c.translate(10, 40)
+    c.scale(1, 1)
+    c.drawImage("YT 2.png", 10, 675, width=150, height=95)
+
+    # Title Section
+    # Again Inverting Scale For strings insertion
+    c.scale(1, 1)
+    # Again Setting the origin back to (0,0) of top-left
+    c.translate(50, 400)
+    # Setting the font for Name title of company
+    c.setFont("Helvetica-Bold", 18)
+    # Inserting the name of the company
+    c.drawCentredString(315, 350, "YOUTH TECHNOLOGY PRIVATE LIMITED")
+    # For under lining the title
+    c.line(500, 340, 130, 340)
+    # Changing the font size for Specifying Address
+    c.setFont("Helvetica-Bold", 10)
+    c.drawCentredString(
+        300, 325, "Flat no-201,sec-10, beside good will arcade building,Nerul")
+    c.drawCentredString(280, 310, "Navi Mumbai - 400709, India")
+    # Changing the font size for Specifying GST Number of firm
+    c.setFont("Helvetica-Bold", 15)
+    c.drawCentredString(280, 285, "GSTIN : 9876543210AABB")
+
+    # Line Seprating the page header from the body
+    c.line(520, 270, -15, 270)
+
+    # Document Information
+    # Changing the font for Document title
+    c.setFont("Courier-Bold", 20)
+    c.drawCentredString(215, 240, "TAX-INVOICE")
+
+    # This Block Consist of Costumer Details
+    # x-axis,y-axis,length,height,edges
+    c.roundRect(-32, 100, 540, 125, 12, stroke=1, fill=0)
+    c.setFont("Times-Bold", 15)
+    c.drawRightString(200, 200, "INVOICE No.:YT001")
+    c.drawRightString(200, 170, "DATE :10-10-2022")
+    c.drawRightString(200, 140, "CUSTOMER NAME :John Doe")
+    c.drawRightString(200, 110, "PHONE No. :9876543210")
+
+    # This Block Consist of Item Description
+    # x-axis,y-axis,length,height,edges
+    c.roundRect(-32, -420, 540, 500, 12, stroke=1, fill=0)
+    c.line(-32, -335, 508, -335)
+    c.drawCentredString(8, 55, "SR No.")
+    c.drawCentredString(170, 55, "ITEM")
+    c.drawCentredString(340, 55, "PRICE")
+    c.drawCentredString(400, 55, "QTY")
+    c.drawCentredString(465, 55, "TOTAL")
+    # Drawing table for Item Description
+    c.line(-32, 45, 508, 45)  # horizontal line
+    c.line(40, -371, 40, 80)  # vertical lines
+    c.line(300, -371, 300, 80)  # vertical lines
+    c.line(375, -371, 375, 80)  # vertical lines
+    c.line(430, -371, 430, 80)  # vertical lines
+
+    # Declaration and Signature
+    c.line(-32, -370, 508, -370)
+    c.line(250, -370, 250, -420)
+    c.drawString(-25, -385, "We declare that above mentioned")
+    c.drawString(-25, -400, "information is true.")
+    c.drawString(-25, -415, "(This is system generated invoive)")
+    c.drawRightString(450, -415, "Authorised Signatory")
+
+    c.showPage()
+    c.save()
+    buffer.seek(0)
+    return FileResponse(buffer, as_attachment=True, filename='Invoice.pdf')
+
+
+class ProductView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+    queryset = Main.objects.all()
+    serializer_class = MainSerializer
+
+    def get(self, request, *args, **kwargs):
+        pro = Main.objects.all()
+        pro_serializer = MainSerializer(pro, many=True)
+        print("------pro_serializer-------"+str(pro_serializer))
+        res = {
+            'code': 1,
+            'message': "Products List",
+            "result": pro_serializer.data
+        }
+        return Response(data=res, status=status.HTTP_200_OK)
+
+
+class DraftedView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+    queryset = Drafted.objects.all()
+    serializer_class = DraftedSerializer
+
+    def get(self, request, *args, **kwargs):
+        draft = Drafted.objects.all()
+        draft_serializer = DraftedSerializer(draft, many=True)
+        print("------draft_serializer-------"+str(draft_serializer))
+        res = {
+            'code': 1,
+            'message': "Drafted Products",
+            "result": draft_serializer.data
+        }
+        return Response(data=res, status=status.HTTP_200_OK)
+
+
+class PendingView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+    queryset = Pending.objects.all()
+    serializer_class = PendingSerializer
+
+    def get(self, request, *args, **kwargs):
+        pending = Pending.objects.all()
+        pending_serializer = PendingSerializer(pending, many=True)
+        print("------pending_serializer-------"+str(pending_serializer))
+
+        res = {
+            'code': 1,
+            'message': "Pending Products",
+            "result": pending_serializer.data
+        }
+        return Response(data=res, status=status.HTTP_200_OK)
+
+
+class CompletedView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+    queryset = Completed.objects.all()
+    serializer_class = CompletedSerializer
+
+    def get(self, request, *args, **kwargs):
+        complete = Completed.objects.all()
+        complete_serializer = CompletedSerializer(complete, many=True)
+        print("------complete_serializer-------"+str(complete_serializer))
+        res = {
+            'code': 1,
+            'message': "Completed Products",
+            "result": complete_serializer.data
+        }
+        return Response(data=res, status=status.HTTP_200_OK)
+
+
+class StoringPDFView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+    queryset = StoringPDF.objects.all()
+    serializer_class = StoringPDFSerializer
+
+    def get(self, request, *args, **kwargs):
+        storing_pdf = StoringPDF.objects.all()
+        storing_pdf_serializer = StoringPDFSerializer(storing_pdf, many=True)
+        print("------storing_pdf-------"+str(storing_pdf))
+        res = {
+            'code': 1,
+            'message': "Storing PDF",
+            "result": storing_pdf_serializer.data
+        }
+        return Response(data=res, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        storing_pdf_serializer = StoringPDFSerializer(data=request.data)
+        print("storing_pdf_serializer---------"+str(storing_pdf_serializer))
+        if storing_pdf_serializer.is_valid():
+            storing_pdf = storing_pdf_serializer.save()
+            print("-----------storing_pdf---------"+str(storing_pdf))
+            resp2 = {
+                "code": 1,
+                "message": "Storing PDF",
+                "result": storing_pdf_serializer.data
+            }
+            return Response(data=resp2, status=status.HTTP_200_OK)

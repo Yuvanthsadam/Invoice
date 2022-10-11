@@ -1,4 +1,5 @@
 from email.policy import default
+from msilib.schema import Class
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
@@ -43,7 +44,7 @@ class User(AbstractUser):
     is_verified = models.BooleanField(default=False)
     email = models.EmailField(verbose_name='email address', unique=True)
     last_login = models.DateTimeField(null=True, blank=True)
-    # last_logout = models.DateTimeField(null=True, blank=True)
+    last_logout = models.DateTimeField(null=True, blank=True)
     username = None
 
     USERNAME_FIELD = 'email'
@@ -80,8 +81,6 @@ class Admin(models.Model):
 
 
 class Main(models.Model):
-    # admin = models.ForeignKey(
-    #     Admin, on_delete=models.CASCADE,default=1)
     admin_id = models.CharField(max_length=255)
     main_title = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
@@ -112,3 +111,45 @@ class Sub_Title_Two(models.Model):
 
     def __str__(self):
         return str(self.sub_title_two)
+
+
+def upload_directory_path(instance, filename):
+    return 'PDF/{0}/{1}'.format(instance.storing_pdf, filename)
+
+
+class StoringPDF(models.Model):
+    storing_pdf = models.FileField(upload_to=upload_directory_path, blank=True, null=True, max_length=255, validators=[
+        FileExtensionValidator(allowed_extensions=['pdf'])])
+
+
+class Product(models.Model):
+    product = models.ForeignKey(
+        Main, on_delete=models.CASCADE, related_name='product')
+    # description = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.product)
+
+
+class Drafted(models.Model):
+    drafted_product = models.OneToOneField(
+        Main, on_delete=models.CASCADE, related_name='drafted')
+
+    def __str__(self):
+        return str(self.drafted_product)
+
+
+class Pending(models.Model):
+    pending_product = models.OneToOneField(
+        Main, on_delete=models.CASCADE, related_name='pending')
+
+    def __str__(self):
+        return str(self.pending_product)
+
+
+class Completed(models.Model):
+    completed_product = models.OneToOneField(
+        Main, on_delete=models.CASCADE, related_name='completed')
+
+    def __str__(self):
+        return str(self.completed_product)
